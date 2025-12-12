@@ -1,0 +1,27 @@
+POCForce Performance Test Results
+==================================
+Date: Wed Nov 19 23:16:35 PST 2025
+
+Creating 1000 test POCs...
+Created 1000 POCs successfully
+
+Testing: POC List Endpoint (1000 POCs)
+  HTTP Status: 200
+  Response Time: 0.019035s
+
+Testing: POC List with Phase Filter
+  HTTP Status: 200
+  Response Time: 0.007486s
+
+Testing: POC List with Status Filter
+  HTTP Status: 200
+  Response Time: 0.006833s
+
+Testing: POC Detail Endpoint
+  HTTP Status: 200
+  Response Time: 0.003199s
+
+Testing: POC List Endpoint with 10 concurrent requests
+  Total Time: .026s for 10 concurrent requests
+  Average Time: .002s per request
+

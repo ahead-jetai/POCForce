@@ -1,0 +1,43 @@
+Security Analysis – ai-crm-dash
+
+Scope
+- Reviewed Spring Security configuration, JWT handling, auth service, and application properties as of the current codebase.
+
+Findings
+1) JWT secret management (High)
+- JwtUtil uses a default in-code secret (`defaultSecretKeyForDevelopmentOnlyPleaseChangeInProduction`) and derives the key directly from the configured string without length validation. Risk: predictable/weak secret, replay/forgery of tokens, and no rotation.
+- No issuer/audience claims are set or validated; tokens only validate signature/expiration.
+
+2) Token claims and permissions (Medium)
+- Roles are mapped from the user record, but the token itself carries no role/authority claims and is not cross-checked; if repository access is compromised, attackers can mint tokens offline with only the email.
+- Tokens are long-lived by default (24h) with no refresh/rotation logic.
+
+3) Error handling/logging (Low)
+- JwtAuthenticationFilter swallows exceptions and logs only the message; lack of context can hinder detection but avoids leaking details to clients.
+
+4) Transport security (Info)
+- No explicit HTTPS enforcement or HSTS configuration noted; relies on deployment ingress.
+
+5) CORS/CSRF (Medium)
+- CSRF is disabled (appropriate for stateless APIs) but CORS is left to defaults with `cors { }` and no allowed-origins configuration. If deployed with default permitted origins, could allow unintended cross-site calls.
+
+6) Public endpoints (Low)
+- `/api/auth/**`, `/actuator/health`, and Swagger endpoints are public. Health is minimally exposed; Swagger exposure in production may leak API surface if not gated.
+
+7) H2 console (Medium)
+- H2 console is enabled at `/h2-console` with empty password by default profile, and JPA uses `create-drop`. Must not be exposed outside dev.
+
+8) Password handling (Info)
+- Uses BCryptPasswordEncoder for hashing; good. No password complexity or rate-limiting controls observed.
+
+9) Dependency/crypto posture (Info)
+- Using jjwt 0.12.x and Spring Boot 3.5.7; ensure secrets meet key length requirements (>=256-bit for HS256) and keep dependencies patched.
+
+Recommendations
+- Require strong, rotated JWT secret via env/secret manager; enforce HS256 key length and consider adding issuer/audience claims and validation.
+- Shorten token lifetime and introduce refresh/rotation or revoke-on-password-change support.
+- Add CORS configuration with explicit allowed origins/methods/headers; restrict to trusted frontends.
+- Gate Swagger UI and API docs in production (auth or disable). Keep actuator exposure minimal and behind auth.
+- Disable H2 console (spring.h2.console.enabled=false) outside local dev; use credentials if ever enabled.
+- Consider account lockout / rate limiting on authentication to reduce brute-force risk; add password complexity checks.
+- Add security headers (HSTS/HTTPS redirect, content security policy) at gateway or via Spring Security if applicable.
